@@ -19,16 +19,16 @@ exports.handler = async (event) => {
     let filesProcessed = event.Records.map( async (record) => {
         let bucket = record.s3.bucket.name;
         let filename = record.s3.object.key;
-
+        console.log('Filename', filename);
         // Get file from S3
         var params = {
             Bucket: bucket,
             Key: filename
-        }
+        };
         let inputData = await s3.getObject(params).promise();
 
         // Resize the file
-        let tempFile = os.tempdir() + '/' + uuidv4() + '.jpg';
+        let tempFile = os.tmpdir() + '/' + uuidv4() + '.jpg';
         let resizeArgs = {
             srcData: inputData.Body,
             dstPath: tempFile,
@@ -38,11 +38,14 @@ exports.handler = async (event) => {
 
         // Read the resized file
         let resizedData = await readFileAsync(tempFile);
-
+        
         // Upload the new file to s3
         let targetFilename = filename.substring(0, filename.lastIndexOf('.')) + '-smail.jpg';
+        let destBucket = bucket.substring(0, bucket.lastIndexOf('-src')) + '-dest';
+        console.log('Dest Bucket', destBucket)
+
         var params = {
-            Bucket: bucket + '-dest',
+            Bucket: destBucket,
             Key: targetFilename,
             Body: new Buffer(resizedData),
             ContentType: 'image/jpeg',
