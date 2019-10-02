@@ -7,6 +7,9 @@ const AWS = require('aws-sdk');
 
 // Convert resize function im.image to a async function which is used with await below
 const resizeAsync = promisify(im.resize);
+// Convert readFile function fs.readFile to a async function which is used with await below
+const readFileAsync = promisify(fs.readFile);
+const unlinkAsync = promisify(fs.unlink);
 
 AWS.config.update({region: 'ap-southeast-2'});
 const s3 = new AWS.S3();
@@ -34,8 +37,20 @@ exports.handler = async (event) => {
         await resizeAsync(resizeArgs);
 
         // Read the resized file
+        let resizedData = await readFileAsync(tempFile);
 
-        
+        // Upload the new file to s3
+        let targetFilename = filename.substring(0, filename.lastIndexOf('.')) + '-smail.jpg';
+        var params = {
+            Bucket: bucket + '-dest',
+            Key: targetFilename,
+            Body: new Buffer(resizedData),
+            ContentType: 'image/jpeg',
+        };
+
+        await s3.putObject(params).promise();
+        return await unlinkAsync(temFile);
+
     });
 
     await Promise.all(filesProcessed);
