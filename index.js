@@ -49,7 +49,7 @@ exports.handler = async (event) => {
         };
 
         await s3.putObject(params).promise();
-        return await unlinkAsync(temFile);
+        return await unlinkAsync(tempFile);
 
     });
 
